@@ -1,45 +1,74 @@
-import { useState } from 'react'
-import logo from './logo.svg'
-import './App.css'
+import { useCallback, useEffect, useState } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+import "./App.css";
+import { connectWallet, getProvider, PhantomProvider } from "./lib/phantom";
+
+// Constants
+const TWITTER_HANDLE = "_buildspace";
+const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
+
+const App = () => {
+  const [provider, setProvider] = useState<PhantomProvider>();
+  const [walletAddress, setWalletAddress] = useState<string>();
+
+  useEffect(() => {
+    setProvider(getProvider());
+  }, []);
+
+  const handleConnectWallet = useCallback(async () => {
+    if (!provider) {
+      console.error("no provider found");
+      return;
+    }
+    setWalletAddress(await connectWallet(provider));
+  }, [provider]);
+
+  const renderNotConnectedContainer = () => (
+    <button
+      className="cta-button connect-wallet-button"
+      onClick={handleConnectWallet}
+    >
+      Connect to Wallet
+    </button>
+  );
 
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>Hello Vite + React!</p>
-        <p>
-          <button type="button" onClick={() => setCount((count) => count + 1)}>
-            count is: {count}
-          </button>
-        </p>
-        <p>
-          Edit <code>App.tsx</code> and save to test HMR updates.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-          {' | '}
-          <a
-            className="App-link"
-            href="https://vitejs.dev/guide/features.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Vite Docs
-          </a>
-        </p>
-      </header>
+      <div className="container">
+        {provider ? (
+          <div className={walletAddress ? "authed-container" : "container"}>
+            <div className="header-container">
+              <p className="header">🖼 GIF Portal</p>
+              <p className="sub-text">
+                View your GIF collection in the metaverse ✨
+              </p>
+            </div>
+            {!walletAddress && renderNotConnectedContainer()}
+            <div className="footer-container">
+              <img
+                alt="Twitter Logo"
+                className="twitter-logo"
+                src="/assets/twitter-logo.svg"
+              />
+              <a
+                className="footer-text"
+                href={TWITTER_LINK}
+                target="_blank"
+                rel="noreferrer"
+              >{`built on @${TWITTER_HANDLE}`}</a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="header">No provider found. Install it first</p>
+            <a className="footer-text" href="https://phantom.app/">
+              Phantom Browser extension
+            </a>
+          </>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
