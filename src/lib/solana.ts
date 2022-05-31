@@ -1,4 +1,23 @@
-import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  clusterApiUrl,
+  Transaction,
+} from "@solana/web3.js";
+import { AnchorProvider, Idl, Program, web3 } from "@project-serum/anchor";
+
+import idl from "../idl.json";
+
+// Get our program's id from the IDL file.
+const programID = new PublicKey(idl.metadata.address);
+
+// Set our network to devnet.
+const network = clusterApiUrl("devnet");
+
+// Controls how we want to acknowledge when a transaction is "done".
+const opts = {
+  preflightCommitment: "processed" as web3.Commitment,
+};
 
 type DisplayEncoding = "utf8" | "hex";
 type PhantomEvent = "disconnect" | "connect" | "accountChanged";
@@ -28,7 +47,24 @@ export interface PhantomProvider {
   request: (method: PhantomRequestMethod, params: any) => Promise<unknown>;
 }
 
-export const getProvider = (): PhantomProvider | undefined => {
+export const getAnchorProvider = () => {
+  const connection = new Connection(network, opts.preflightCommitment);
+  const provider = new AnchorProvider(
+    connection,
+    // @ts-ignore
+    window.solana,
+    { preflightCommitment: opts.preflightCommitment }
+  );
+  return provider;
+};
+
+export const getProgram = () => {
+  const provider = getAnchorProvider();
+  const program = new Program(idl as unknown as Idl, programID, provider);
+  return program;
+};
+
+export const getPhantomProvider = (): PhantomProvider | undefined => {
   if ("solana" in window) {
     // @ts-ignore
     const provider = window.solana as any;
